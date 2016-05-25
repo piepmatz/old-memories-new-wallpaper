@@ -1,5 +1,5 @@
 import sqlite3 as sqlite
-from os import path
+import os
 import abc
 import six
 
@@ -17,9 +17,9 @@ class ImageSource:
 class LightroomSource(ImageSource):
 
     def __init__(self, source_path):
-        self.path = path.expanduser(source_path)  # deal with ~
+        self.path = os.path.expanduser(source_path)  # deal with ~
 
-        if not path.isfile(self.path):
+        if not os.path.isfile(self.path):
             error("No such file: {}".format(self.path))
 
     def get_images_and_capture_times(self):

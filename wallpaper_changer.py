@@ -7,7 +7,7 @@ import random
 import subprocess
 import sys
 import argparse
-from os import path
+import os
 from dateutil.parser import parse as parse_date
 
 from sources import LightroomSource
@@ -21,11 +21,11 @@ def set_wallpaper(img_path):
     def _restart_dock():
         subprocess.call(["/usr/bin/killall", "Dock"])
 
-    if not path.isfile(path.expanduser(WALLPAPER_SETTINGS)):
+    if not os.path.isfile(os.path.expanduser(WALLPAPER_SETTINGS)):
         error("BUG: unable to find OS X wallpaper settings")
 
     try:
-        conn = sqlite.connect(path.expanduser(WALLPAPER_SETTINGS))
+        conn = sqlite.connect(os.path.expanduser(WALLPAPER_SETTINGS))
     except sqlite.OperationalError:
         error("Unable to open OS X wallpaper settings.")
 
@@ -54,7 +54,7 @@ def main():
     args = parser.parse_args()
     source_path = args.source
 
-    if path.isdir(source_path):
+    if os.path.isdir(source_path):
         raise NotImplementedError()
     elif source_path.endswith(".lrcat"):
         image_source = LightroomSource(source_path)
