@@ -8,7 +8,6 @@ import subprocess
 import sys
 import argparse
 import os
-from dateutil.parser import parse as parse_date
 
 from sources import LightroomSource
 from util import error
@@ -63,16 +62,13 @@ def main():
 
     today = date.today()
 
-    images, dates = image_source.get_images_and_capture_times()
+    images, dates = image_source.get_images_and_capture_dates()
     assert len(images) == len(dates)
     if len(images) == 0:
         error("Unable to find any images in the given source.")
 
-    # set year for all dates to current year as we only care about time delta modulo 1 year
-    dates = [parse_date(d).replace(year=today.year).date() for d in dates]
-
-    # replace capture dates with their absolute time deltas as seen from today
-    dates = [abs(today - d).days for d in dates]
+    # replace capture dates with their absolute time deltas as seen from today considering only month and day
+    dates = [abs(today - d.replace(year=today.year)).days for d in dates]
 
     # find minimal time delta and its index
     min_delta_index, min_delta_value = min(enumerate(dates), key=lambda delta: delta[1])

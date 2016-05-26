@@ -2,27 +2,26 @@ import sqlite3 as sqlite
 import os
 import abc
 import six
+from dateutil.parser import parse as parse_date
 
 from util import error
 
 
 @six.add_metaclass(abc.ABCMeta)
 class ImageSource:
-
     @abc.abstractmethod
-    def get_images_and_capture_times(self):
+    def get_images_and_capture_dates(self):
         pass
 
 
 class LightroomSource(ImageSource):
-
     def __init__(self, source_path):
         self.path = os.path.expanduser(source_path)  # deal with ~
 
         if not os.path.isfile(self.path):
             error("No such file: {}".format(self.path))
 
-    def get_images_and_capture_times(self):
+    def get_images_and_capture_dates(self):
         imgs = []
         capture_times = []
 
@@ -49,8 +48,12 @@ class LightroomSource(ImageSource):
 
         try:
             for (root, file_path, name, capture_time) in conn.execute(query):
-                imgs.append(root + file_path + name)
+                try:
+                    capture_time = parse_date(capture_time).date()
+                except:
+                    continue  # skip image if parsing the date fails
                 capture_times.append(capture_time)
+                imgs.append(root + file_path + name)
         except sqlite.DatabaseError as e:
             error("Unable to query Lightroom catalog: {}".format(e))
         finally:
