@@ -6,6 +6,7 @@ import re
 import exifread
 from datetime import datetime
 from dateutil.parser import parse as parse_date
+import logging
 
 from util import error
 
@@ -33,6 +34,11 @@ class FilesystemSource(ImageSource):
             self.extensions.append(e.lower())
             self.extensions.append(e.upper())
         self.pattern = re.compile(self.pattern_template.format('|'.join(self.extensions)))
+
+        # exifread uses logging but requires us to set it up.
+        exifread.exif_log.setup_logger(debug=False, color=False)
+        # set logging to be less verbose
+        exifread.exif_log.get_logger().setLevel(logging.ERROR)
 
     def get_images_and_capture_dates(self):
         img_files = []
