@@ -9,7 +9,7 @@ import sys
 import argparse
 import os
 
-from sources import LightroomSource
+from sources import FilesystemSource, LightroomSource
 from util import error
 
 WALLPAPER_SETTINGS = "~/Library/Application Support/Dock/desktoppicture.db"
@@ -50,11 +50,15 @@ def main():
     parser.add_argument("source",
                         help="The source where to take wallpapers from. "
                              "Can be a directory or an Adobe Lightroom 6 catalog.")
+    parser.add_argument("-r", "-R", "--recursive",
+                        action="store_true",
+                        help="When the source is a directory, look for images recursively.")
     args = parser.parse_args()
     source_path = args.source
 
     if os.path.isdir(source_path):
-        raise NotImplementedError()
+        image_source = FilesystemSource(source_path, recursive=args.recursive)
+
     elif source_path.endswith(".lrcat"):
         image_source = LightroomSource(source_path)
     else:
