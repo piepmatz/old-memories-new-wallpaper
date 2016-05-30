@@ -53,6 +53,9 @@ def main():
     parser.add_argument("-r", "-R", "--recursive",
                         action="store_true",
                         help="When the source is a directory, look for images recursively.")
+    parser.add_argument("--dry-run",
+                        action="store_true",
+                        help="Show which image would be chosen without actually changing the wallpaper.")
     args = parser.parse_args()
     source_path = args.source
 
@@ -82,7 +85,10 @@ def main():
 
     wallpaper = images[random.choice(candidates_indexes)]
 
-    set_wallpaper(wallpaper)
+    if args.dry_run:
+        print("The new wallpaper would have been: {}".format(wallpaper))
+    else:
+        set_wallpaper(wallpaper)
 
     print("There are {} images with a time delta of {} day(s).".format(len(candidates_indexes), min_delta_value))
     print("New Wallpaper: {}".format(wallpaper))
