@@ -56,6 +56,10 @@ def main():
     parser.add_argument("--dry-run",
                         action="store_true",
                         help="Show which image would be chosen without actually changing the wallpaper.")
+    parser.add_argument("-v", "--verbose",
+                        action="store_true",
+                        help="Show additional information such as number of images in the source and how many images"
+                             "are qualififed for the current date.")
     args = parser.parse_args()
     source_path = args.source
 
@@ -85,13 +89,21 @@ def main():
 
     wallpaper = images[random.choice(candidates_indexes)]
 
-    if args.dry_run:
-        print("The new wallpaper would have been: {}".format(wallpaper))
-    else:
+    if not args.dry_run:
         set_wallpaper(wallpaper)
 
-    print("There are {} images with a time delta of {} day(s).".format(len(candidates_indexes), min_delta_value))
-    print("New Wallpaper: {}".format(wallpaper))
+    if args.verbose:
+        dates_cnt = len(dates)
+        print("{} {} available in {}".format(dates_cnt, "image is" if dates_cnt==1 else "images are", source_path))
+        candidates_cnt = len(candidates_indexes)
+        print("{} {} a time delta of {} {} as seen from today."
+              .format(candidates_cnt,
+                      "image has" if candidates_cnt == 1 else "images have",
+                      min_delta_value,
+                      "day" if min_delta_value == 1 else "days"))
+
+    if args.verbose or args.dry_run:
+        print("New Wallpaper: {}".format(wallpaper))
 
     sys.exit(0)
 
