@@ -13,6 +13,25 @@ from desktop_environments import OSXDesktop, WindowsDesktop
 from util import error
 
 
+def load_source(args):
+    if os.path.isdir(args.source):
+        return FilesystemSource(args.source, recursive=args.recursive)
+    elif args.source.endswith(".lrcat"):
+        return LightroomSource(args.source)
+    else:
+        error("{} is neither a directory nor a Lightroom catalog.".format(args.source))
+
+
+def load_desktop_environment():
+    platform = sys.platform
+    if platform == "darwin":
+        return OSXDesktop()
+    elif platform == "win32":
+        return WindowsDesktop()
+    else:
+        error("Your operating system is not supported.")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("source",
@@ -29,15 +48,8 @@ def main():
                         help="Show additional information such as number of images in the source and how many images"
                              "are qualififed for the current date.")
     args = parser.parse_args()
-    source_path = args.source
 
-    if os.path.isdir(source_path):
-        image_source = FilesystemSource(source_path, recursive=args.recursive)
-
-    elif source_path.endswith(".lrcat"):
-        image_source = LightroomSource(source_path)
-    else:
-        error("{} is neither a directory nor a Lightroom catalog.".format(source_path))
+    image_source = load_source(args)
 
     today = date.today()
 
@@ -47,28 +59,24 @@ def main():
         error("Unable to find any images in the given source.")
 
     # replace capture dates with their absolute time deltas as seen from today considering only month and day
-    dates = [abs(today - d.replace(year=today.year)).days for d in dates]
+    deltas = [abs(today - d.replace(year=today.year)).days for d in dates]
 
-    # find minimal time delta and its index
-    min_delta_index, min_delta_value = min(enumerate(dates), key=lambda delta: delta[1])
+    # find minimal time delta
+    min_delta_value = min(deltas)
 
     # find all images' indexes sharing the minimal time delta
-    candidates_indexes = [i for i, d in enumerate(dates) if d == min_delta_value]
+    candidates_indexes = [i for i, d in enumerate(deltas) if d == min_delta_value]
 
     wallpaper = images[random.choice(candidates_indexes)]
 
-    platform = sys.platform
-    if platform == "darwin":
-        desktop = OSXDesktop()
-    elif platform == "win32":
-        desktop = WindowsDesktop()
+    desktop = load_desktop_environment()
 
     if not args.dry_run:
         desktop.set_wallpaper(wallpaper)
 
     if args.verbose:
         dates_cnt = len(dates)
-        print("{} {} available in {}".format(dates_cnt, "image is" if dates_cnt==1 else "images are", source_path))
+        print("{} {} available in {}".format(dates_cnt, "image is" if dates_cnt == 1 else "images are", args.source))
         candidates_cnt = len(candidates_indexes)
         print("{} {} a time delta of {} {} as seen from today."
               .format(candidates_cnt,

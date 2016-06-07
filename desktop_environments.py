@@ -2,10 +2,11 @@ from __future__ import unicode_literals
 
 import os
 import abc
-import six
 import sqlite3 as sqlite
 import subprocess
 import ctypes
+
+import six
 
 from util import error
 
@@ -43,8 +44,8 @@ class OSXDesktop(DesktopEnvironment):
         try:
             conn.execute(query)
             conn.commit()
-        except sqlite.DatabaseError as e:
-            error("Unable to save new wallpaper: {}".format(e))
+        except sqlite.DatabaseError as db_error:
+            error("Unable to save new wallpaper: {}".format(db_error))
         finally:
             conn.close()
 
@@ -57,11 +58,8 @@ class WindowsDesktop(DesktopEnvironment):
     SPIF_SENDWININICHANGE = 0x02
 
     def set_wallpaper(self, img_path):
-        try:
-            res = ctypes.windll.user32.SystemParametersInfoW(
-                self.SPI_SETDESKWALLPAPER, 0, img_path, self.SPIF_UPDATEINIFILE | self.SPIF_SENDWININICHANGE)
-        except Exception as e:
-            error("Unable to change wallpaper. The following error occurred:\n{}".format(repr(e)))
+        res = ctypes.windll.user32.SystemParametersInfoW(
+            self.SPI_SETDESKWALLPAPER, 0, img_path, self.SPIF_UPDATEINIFILE | self.SPIF_SENDWININICHANGE)
         if not res:
             # call Windows's GetLastError() and print error message
             raise ctypes.WinError()

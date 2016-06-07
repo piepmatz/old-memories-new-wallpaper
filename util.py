@@ -7,7 +7,7 @@ def error(msg):
     sys.exit(1)
 
 
-def to_unicode(s):
+def to_unicode(string):
     """
     Expects a string and returns a unicode.
     For Python 2, the string is converted to a unicode with utf-8 encoding to handle German Umlaute.
@@ -18,11 +18,11 @@ def to_unicode(s):
     with Python 3.
     """
     try:
-        return unicode(s, encoding="utf-8")
+        return unicode(string, encoding="utf-8")
     except UnicodeDecodeError:
         try:
-            return unicode(s, encoding="cp1252")  # similar to latin1, used by Windows
+            return unicode(string, encoding="cp1252")  # similar to latin1, used by Windows
         except UnicodeDecodeError:
             error("Your files have some difficult names. Switching to Python 3 should solve this problem.")
     except NameError:
-        return s
+        return string

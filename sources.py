@@ -3,12 +3,13 @@ from __future__ import unicode_literals
 import sqlite3 as sqlite
 import os
 import abc
-import six
 import re
-import exifread
 from datetime import datetime
-from dateutil.parser import parse as parse_date
 import logging
+
+import exifread
+from dateutil.parser import parse as parse_date
+import six
 
 from util import error, to_unicode
 
@@ -22,7 +23,7 @@ class ImageSource(object):
 
 class FilesystemSource(ImageSource):
     extensions_lower = ["jpg"]  # list of supported case-insensitive image file formats
-    pattern_template = "^\w+.*\.({})$"
+    pattern_template = r"^\w+.*\.({})$"
 
     def __init__(self, source_path, recursive=False):
         self.path = os.path.expanduser(source_path)  # deal with ~
@@ -32,9 +33,9 @@ class FilesystemSource(ImageSource):
         self.recursive = recursive
 
         self.extensions = []
-        for e in self.extensions_lower:
-            self.extensions.append(e.lower())
-            self.extensions.append(e.upper())
+        for ext in self.extensions_lower:
+            self.extensions.append(ext.lower())
+            self.extensions.append(ext.upper())
         self.pattern = re.compile(self.pattern_template.format('|'.join(self.extensions)))
 
         # exifread uses logging but requires us to set it up.
@@ -43,26 +44,26 @@ class FilesystemSource(ImageSource):
         exifread.exif_log.get_logger().setLevel(logging.ERROR)
 
     def get_images_and_capture_dates(self):
-        img_files = []
+        img_file_names = []
 
         if self.recursive:
-            for root, dir, files in os.walk(self.path):
-                img_files += [to_unicode(os.path.join(root, file))
-                              for file in files if self.pattern.match(file)]
+            for root, _, file_names in os.walk(self.path):
+                img_file_names += [to_unicode(os.path.join(root, file_name))
+                                   for file_name in file_names if self.pattern.match(file_name)]
         else:
-            img_files = [to_unicode(os.path.join(self.path, file))
-                         for file in os.listdir(self.path)
-                         if os.path.isfile(os.path.join(self.path, file)) and self.pattern.match(file)]
+            img_file_names = [to_unicode(os.path.join(self.path, file_name))
+                              for file_name in os.listdir(self.path)
+                              if os.path.isfile(os.path.join(self.path, file_name)) and self.pattern.match(file_name)]
 
         capture_times = []
         images_with_times = []
-        for img in img_files:
-            with open(img, 'rb') as f:
+        for img_file_name in img_file_names:
+            with open(img_file_name, 'rb') as img_file:
                 try:
-                    tags = exifread.process_file(f, stop_tag="DateTimeOriginal", details=False)
+                    tags = exifread.process_file(img_file, stop_tag="DateTimeOriginal", details=False)
                 except:
                     continue  # if a file is corrupt in any way, skip it
-                date = tags.get("EXIF DateTimeOriginal") or tags.get("EXIF DateTimeDigitized")\
+                date = tags.get("EXIF DateTimeOriginal") or tags.get("EXIF DateTimeDigitized") \
                        or tags.get("Image DateTime")
                 if not date:
                     continue  # skip images without info when they were taken
@@ -73,7 +74,7 @@ class FilesystemSource(ImageSource):
                     continue  # skip image if parsing the date fails
 
                 capture_times.append(date)
-                images_with_times.append(img)
+                images_with_times.append(img_file_name)
 
         return images_with_times, capture_times
 
@@ -118,8 +119,8 @@ class LightroomSource(ImageSource):
                     continue  # skip image if parsing the date fails
                 capture_times.append(capture_time)
                 imgs.append(root + file_path + name)
-        except sqlite.DatabaseError as e:
-            error("Unable to query Lightroom catalog: {}".format(e))
+        except sqlite.DatabaseError as db_error:
+            error("Unable to query Lightroom catalog: {}".format(db_error))
         finally:
             conn.close()
 
