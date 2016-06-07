@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import sqlite3 as sqlite
 import os
 import abc
@@ -8,7 +10,7 @@ from datetime import datetime
 from dateutil.parser import parse as parse_date
 import logging
 
-from util import error
+from util import error, to_unicode
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -45,9 +47,11 @@ class FilesystemSource(ImageSource):
 
         if self.recursive:
             for root, dir, files in os.walk(self.path):
-                img_files += [os.path.join(root, file) for file in files if self.pattern.match(file)]
+                img_files += [to_unicode(os.path.join(root, file))
+                              for file in files if self.pattern.match(file)]
         else:
-            img_files = [os.path.join(self.path, file) for file in os.listdir(self.path)
+            img_files = [to_unicode(os.path.join(self.path, file))
+                         for file in os.listdir(self.path)
                          if os.path.isfile(os.path.join(self.path, file)) and self.pattern.match(file)]
 
         capture_times = []
