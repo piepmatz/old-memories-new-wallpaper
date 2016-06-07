@@ -3,47 +3,14 @@
 from __future__ import unicode_literals, print_function
 
 from datetime import date
-import sqlite3 as sqlite
 import random
-import subprocess
 import sys
 import argparse
 import os
 
 from sources import FilesystemSource, LightroomSource
+from desktop_environments import OSXDesktop, WindowsDesktop
 from util import error
-
-WALLPAPER_SETTINGS = "~/Library/Application Support/Dock/desktoppicture.db"
-
-
-def set_wallpaper(img_path):
-
-    def _restart_dock():
-        subprocess.call(["/usr/bin/killall", "Dock"])
-
-    if not os.path.isfile(os.path.expanduser(WALLPAPER_SETTINGS)):
-        error("BUG: unable to find OS X wallpaper settings")
-
-    try:
-        conn = sqlite.connect(os.path.expanduser(WALLPAPER_SETTINGS))
-    except sqlite.OperationalError:
-        error("Unable to open OS X wallpaper settings.")
-
-    query = """
-        UPDATE
-            data
-        SET VALUE = ("{}")
-    """.format(img_path)
-
-    try:
-        conn.execute(query)
-        conn.commit()
-    except sqlite.DatabaseError as e:
-        error("Unable to save new wallpaper: {}".format(e))
-    finally:
-        conn.close()
-
-    _restart_dock()
 
 
 def main():
@@ -90,8 +57,14 @@ def main():
 
     wallpaper = images[random.choice(candidates_indexes)]
 
+    platform = sys.platform
+    if platform == "darwin":
+        desktop = OSXDesktop()
+    elif platform == "win32":
+        desktop = WindowsDesktop()
+
     if not args.dry_run:
-        set_wallpaper(wallpaper)
+        desktop.set_wallpaper(wallpaper)
 
     if args.verbose:
         dates_cnt = len(dates)

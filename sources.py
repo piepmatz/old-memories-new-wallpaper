@@ -14,7 +14,7 @@ from util import error, to_unicode
 
 
 @six.add_metaclass(abc.ABCMeta)
-class ImageSource:
+class ImageSource(object):
     @abc.abstractmethod
     def get_images_and_capture_dates(self):
         pass
