@@ -50,8 +50,7 @@ def main():
     args = parser.parse_args()
 
     desktop = load_desktop_environment()
-    if args.verbose:
-        current_wallpaper = desktop.get_current_wallpaper()
+    current_wallpaper = desktop.get_current_wallpaper()
 
     image_source = load_source(args)
 
@@ -69,10 +68,14 @@ def main():
     # find minimal time delta
     min_delta_value = min(deltas)
 
-    # find all images' indexes sharing the minimal time delta
-    candidates_indexes = [i for i, d in enumerate(deltas) if d == min_delta_value]
+    # find all images sharing the minimal time delta
+    candidates = [images[i] for i, d in enumerate(deltas) if d == min_delta_value]
+    candidates_cnt = len(candidates)
 
-    wallpaper = images[random.choice(candidates_indexes)]
+    if candidates_cnt > 1 and current_wallpaper in candidates:
+        candidates.remove(current_wallpaper)
+
+    wallpaper = random.choice(candidates)
 
     if not args.dry_run:
         desktop.set_wallpaper(wallpaper)
@@ -81,7 +84,6 @@ def main():
         dates_cnt = len(dates)
         print("Current wallpaper: {}".format(current_wallpaper))
         print("{} {} available in {}".format(dates_cnt, "image is" if dates_cnt == 1 else "images are", args.source))
-        candidates_cnt = len(candidates_indexes)
         print("{} {} a time delta of {} {} as seen from today."
               .format(candidates_cnt,
                       "image has" if candidates_cnt == 1 else "images have",
