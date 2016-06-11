@@ -56,7 +56,8 @@ def main():
     images, dates = image_source.get_images_and_capture_dates()
     assert len(images) == len(dates)
     if len(images) == 0:
-        error("Unable to find any images in the given source.")
+        error("Unable to find any images in the given source." +
+              (" Consider the -r switch." if isinstance(image_source, FilesystemSource) and not args.recursive else ""))
 
     # replace capture dates with their absolute time deltas as seen from today considering only month and day
     deltas = [abs(today - d.replace(year=today.year)).days for d in dates]
