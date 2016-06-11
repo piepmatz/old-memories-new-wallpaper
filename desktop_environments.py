@@ -25,24 +25,24 @@ class OSXDesktop(DesktopEnvironment):
         if not os.path.isfile(os.path.expanduser(self.WALLPAPER_SETTINGS)):
             error("BUG: unable to find OS X wallpaper settings")
 
+    def _get_db(self):
+        try:
+            conn = sqlite.connect(os.path.expanduser(self.WALLPAPER_SETTINGS))
+            cursor = conn.cursor()
+            return conn, cursor
+        except sqlite.OperationalError:
+            error("Unable to open OS X wallpaper settings.")
     def set_wallpaper(self, img_path):
 
         def _restart_dock():
             subprocess.call(["/usr/bin/killall", "Dock"])
 
-        try:
-            conn = sqlite.connect(os.path.expanduser(self.WALLPAPER_SETTINGS))
-        except sqlite.OperationalError:
-            error("Unable to open OS X wallpaper settings.")
+        conn, cursor = self._get_db()
 
-        query = """
-            UPDATE
-                data
-            SET VALUE = ("{}")
-        """.format(img_path)
+        query = "UPDATE data SET value = (?)"
 
         try:
-            conn.execute(query)
+            cursor.execute(query, (img_path,))
             conn.commit()
         except sqlite.DatabaseError as db_error:
             error("Unable to save new wallpaper: {}".format(db_error))

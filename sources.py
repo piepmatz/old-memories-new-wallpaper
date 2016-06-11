@@ -92,6 +92,7 @@ class LightroomSource(ImageSource):
 
         try:
             conn = sqlite.connect(self.path)
+            cursor = conn.cursor()
         except sqlite.OperationalError:
             error("Unable to open Lightroom catalog.")
 
@@ -112,7 +113,7 @@ class LightroomSource(ImageSource):
             """
 
         try:
-            for (root, file_path, name, capture_time) in conn.execute(query):
+            for (root, file_path, name, capture_time) in cursor.execute(query):
                 try:
                     capture_time = parse_date(capture_time).date()
                 except:
