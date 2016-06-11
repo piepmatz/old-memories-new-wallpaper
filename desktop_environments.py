@@ -14,6 +14,10 @@ from util import error
 @six.add_metaclass(abc.ABCMeta)
 class DesktopEnvironment(object):
     @abc.abstractmethod
+    def get_current_wallpaper(self):
+        pass
+
+    @abc.abstractmethod
     def set_wallpaper(self, img_path):
         pass
 
@@ -32,6 +36,28 @@ class OSXDesktop(DesktopEnvironment):
             return conn, cursor
         except sqlite.OperationalError:
             error("Unable to open OS X wallpaper settings.")
+
+    def get_current_wallpaper(self):
+        conn, cursor = self._get_db()
+
+        query = "SELECT value FROM data"
+
+        try:
+            cursor.execute(query)
+            paths = cursor.fetchall()
+            if not len(paths) > 0:
+                error("Unable to get current wallpaper.")
+            # we expect all rows to have the same content
+            if not paths.count(paths[0]) == len(paths):
+                return "You seem to have different wallpapers."
+            return paths[0][0]
+        except sqlite.DatabaseError as db_error:
+            error("Unable to get current wallpaper: {}".format(db_error))
+        finally:
+            conn.close()
+
+        return ""
+
     def set_wallpaper(self, img_path):
 
         def _restart_dock():
@@ -53,9 +79,22 @@ class OSXDesktop(DesktopEnvironment):
 
 
 class WindowsDesktop(DesktopEnvironment):
+    SPI_GETDESKWALLPAPER = 0x73
     SPI_SETDESKWALLPAPER = 0x14
     SPIF_UPDATEINIFILE = 0x01
     SPIF_SENDWININICHANGE = 0x02
+    BUFFER_SIZE = 256
+
+    def get_current_wallpaper(self):
+        wallpaper = ctypes.create_unicode_buffer(self.BUFFER_SIZE)
+        res = ctypes.windll.user32.SystemParametersInfoW(
+            self.SPI_GETDESKWALLPAPER, self.BUFFER_SIZE, wallpaper, 0)
+        if not res:
+            # call Windows's GetLastError() and print error message
+            raise ctypes.WinError()
+        if not wallpaper.value:
+            return "Unable to get current wallpaper."
+        return wallpaper.value
 
     def set_wallpaper(self, img_path):
         res = ctypes.windll.user32.SystemParametersInfoW(

@@ -49,6 +49,10 @@ def main():
                              "are qualififed for the current date.")
     args = parser.parse_args()
 
+    desktop = load_desktop_environment()
+    if args.verbose:
+        current_wallpaper = desktop.get_current_wallpaper()
+
     image_source = load_source(args)
 
     today = date.today()
@@ -70,13 +74,12 @@ def main():
 
     wallpaper = images[random.choice(candidates_indexes)]
 
-    desktop = load_desktop_environment()
-
     if not args.dry_run:
         desktop.set_wallpaper(wallpaper)
 
     if args.verbose:
         dates_cnt = len(dates)
+        print("Current wallpaper: {}".format(current_wallpaper))
         print("{} {} available in {}".format(dates_cnt, "image is" if dates_cnt == 1 else "images are", args.source))
         candidates_cnt = len(candidates_indexes)
         print("{} {} a time delta of {} {} as seen from today."
@@ -86,7 +89,7 @@ def main():
                       "day" if min_delta_value == 1 else "days"))
 
     if args.verbose or args.dry_run:
-        print("New Wallpaper: {}".format(wallpaper))
+        print("New wallpaper: {}".format(wallpaper))
 
     sys.exit(0)
 
