@@ -54,7 +54,7 @@ def main():
 
     image_source = load_source(args)
 
-    today = date.today()
+    today = date.today().replace(year=2020) # use 2020, it's a leap year, so pics taken on Feb 29 are valid
 
     images, dates = image_source.get_images_and_capture_dates()
     assert len(images) == len(dates)
